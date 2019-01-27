@@ -1,0 +1,13 @@
+# Ignore Files 
+
+# Editor files 
+*~ 
+
+# Images
+*.pdf 
+*.png 
+
+# Compiled files 
+*.so 
+*.a
+*.o
