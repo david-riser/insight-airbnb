@@ -1,59 +1,124 @@
 #!/usr/bin/env python 
 
 import dash
+import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_table
+import numpy as np
 import pandas as pd
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 app = dash.Dash(__name__)
 
-df = pd.read_csv('../data/predictions.csv')
+# Prediction
+df = pd.read_csv('./data/predictions/predictions.csv')
 
-def generate_table(dataframe, max_rows=10):
-    return html.Table(
-        # Header
-        [html.Tr([html.Th(col) for col in dataframe.columns])] +
+app.layout = html.Div([
+        html.Div([
+                html.Div([
+                        html.H3('Airvestments: Find your next investment property!'),
+                        
+                        dcc.Graph(
+                            id = 'graph',
+                            figure = {
+                                'data': [{'lat': df['latitude'], 'lon': df['longitude'], 'type': 'scattermapbox', 'text': df['airbnb_price']}],
+                                'layout': {
+                                    'mapbox': {
+                                        'accesstoken': (
+                                            'pk.eyJ1IjoiZG1yaXNlciIsImEiOiJjanJmN3E4eW4yN283NDNwZDV6cWowMXNqIn0.oHNXyMiqEAgbyIrmprW2yA'
+                                            ),
+                                        'center' : {
+                                            'lat' : 42.3536, 
+                                            'lon' : -71.0638 
+                                            },
+                                        'zoom' : 9.6,
+                                        'style' : 'dark'
+                                        },
+                                    'margin': {
+                                        'l': 0, 'r': 0, 'b': 0, 't': 0
+                                        },
+                                    }
+                                }
+                            )
+                        
+                        ], className = "eight columns"),
+                
+                html.Div([
+                        html.H3('Enter Settings!'),
 
-        # Body
-        [html.Tr([
-            html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-        ]) for i in range(min(len(dataframe), max_rows))]
-    )
+                        dcc.Input(
+                            id = 'min_price_input',
+                            placeholder = 'Min. Price',
+                            type = 'text'
+                            ),
 
-app.layout = html.Div(
-    children=[
-        html.H4(children = 'Airvestments: Find your next real estate investment!'),
+                        dcc.Input(
+                            id = 'max_price_input',
+                            placeholder = 'Max. Price',
+                            type = 'text' 
+                            )
 
-        dcc.Dropdown(
-            id = 'bedrooms-dropdown', 
-            options=[
-                {'label': i, 'value': i} for i in df['BEDS'].unique()
-                ], 
-            multi=True, 
-            placeholder = 'bedrooms...'),
+                        ], className="four columns"),
+                ], className="row"),
 
-        dcc.Dropdown(
-            id = 'bathrooms-dropdown', 
-            options=[
-                {'label': i, 'value': i} for i in df['BATHS'].unique()
-                ], 
-            multi=True, 
-            placeholder = 'bathrooms...'),
+        ])
 
-        html.Div(id='table-container')
-])
+app.css.append_css({
+    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
+})
 
+def calculate_monthly_payment(loan_amount, rate, years):
+    months = years * 12 
+    c = rate / 12.0
+    return loan_amount * ( c * (1 + c)**months ) / ( (1 + c)**months - 1 )
+    
 @app.callback(
-    dash.dependencies.Output('table-container', 'children'),
-    [dash.dependencies.Input('bedrooms-dropdown', 'value'), 
-     dash.dependencies.Input('bathrooms-dropdown', 'value')])
-def display_table(bedrooms, bathrooms):
+    dash.dependencies.Output('graph', 'figure'), 
+    [
+     dash.dependencies.Input('min_price_input', 'value'),
+     dash.dependencies.Input('max_price_input', 'value')
+     ]
+)
+def update_map(min_price, max_price):
+    
+    dataset = df[df['PRICE'] > int(min_price)]
+    dataset = dataset[dataset['PRICE'] < int(max_price)]
 
-    dff = df[df['BEDS'] == bedrooms]
-    dff = dff[dff['BATHS'] == bathrooms]
-    dff.sort_values('airbnb_price', ascending = False, inplace = True)
-    return generate_table(dff)
+    dataset['monthly_payment'] = dataset['PRICE'].apply(lambda x: calculate_monthly_payment(x, 0.05, 30))
+
+    occupancy = 0.7
+    dataset['profit'] = occupancy * dataset['airbnb_price'] * (365.25 / 12.0) - dataset['monthly_payment'] 
+
+    return {
+
+        'data': [
+            {
+                'lat': dataset['latitude'], 
+                'lon': dataset['longitude'], 
+                'type': 'scattermapbox', 
+                'text': dataset['profit']
+                }
+            ],
+
+        'layout': {
+            'mapbox': {
+                'accesstoken': (
+                    'pk.eyJ1IjoiZG1yaXNlciIsImEiOiJjanJmN3E4eW4yN283NDNwZDV6cWowMXNqIn0.oHNXyMiqEAgbyIrmprW2yA'
+                    ),
+                'center' : {
+                    'lat' : 42.3536, 
+                    'lon' : -71.0638 
+                    },
+                'zoom' : 9.6,
+                'style' : 'dark'
+                },
+            'margin': {
+                'l': 0, 'r': 0, 'b': 0, 't': 0
+                },
+            }
+        }
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug = True, port = 5678)
+    

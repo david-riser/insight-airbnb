@@ -1,20 +1,22 @@
 #!/usr/bin/env python 
 
 import numpy as np
-import pandas as pd 
+import pandas as pd
 
 from sklearn.externals import joblib
 
 if __name__ == '__main__':
 
     # Input data 
-    data_path = '../data/redfin_boston.csv'
-    model_path = '../models/price_model_rf.joblib'
-    sample_size = 100
+    data = pd.read_csv('./data/processed/redfin_boston.csv')
+    model_name = 'random_forest'
+    n_folds = 5
 
-    # Load data 
-    data = pd.read_csv(data_path, nrows = sample_size)
-    print(data.head())
+    models = []
+    for index in range(n_folds):
+        models.append(
+            joblib.load('./models/{}_{}.joblib'.format(model_name, index))
+        )
 
     # Kill the horrible name 
     kill_index = -1
@@ -27,25 +29,26 @@ if __name__ == '__main__':
         new_cols[kill_index] = 'URL'
         data.columns = new_cols
 
-    
-    # Load model 
-    model = joblib.load(model_path)
-    
     # Predict these houses
-    features = ['BEDS', 'BATHS', 'LATITUDE', 'LONGITUDE']
-    keep_cols = ['BEDS', 'BATHS', 'LATITUDE', 'LONGITUDE']
-    #    keep_cols.append('URL (SEE http://www.redfin.com/buy-a-home/comparative-market-analysis FOR INFO ON PRICING)')
+    features = ['bedrooms', 'bathrooms', 'latitude', 'longitude', 'crime_index']
+    keep_cols = ['bedrooms', 'bathrooms', 'latitude', 'longitude', 'crime_index', 'PRICE']
     keep_cols.append('URL')
+
+    for col in data.columns:
+        if 'dist' in col:
+            features.append(col)
+            keep_cols.append(col)
 
     # Basic cleanup 
     data = data[keep_cols]
     data.dropna(how = 'any', inplace = True)
-    print(data.head())
 
-    data['airbnb_price'] = model.predict(data[features].values)
-    print(data.head())
+    data['airbnb_price'] = np.zeros(len(data))
+    for model in models:
+        data['airbnb_price'] += model.predict(data[features].values) / float(n_folds)
+
 
     # Save output 
-    data.to_csv('../data/predictions.csv', index = False)
+    data.to_csv('./data/predictions/predictions.csv', index = False)
 
     print(data.sort_values('airbnb_price', ascending = False))
