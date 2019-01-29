@@ -1,0 +1,8 @@
+ns-1454.awsdns-53.org.
+ns-1657.awsdns-15.co.uk.
+ns-828.awsdns-39.net.
+ns-438.awsdns-54.com.
+
+
+Elastic IP:
+18.218.241.30
