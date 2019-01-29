@@ -10,7 +10,7 @@ MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZG1yaXNlciIsImEiOiJjanJmN3E4eW4yN283NDNwZDV6cW
 
 app = dash.Dash(__name__)
 
-df = pd.read_csv('../data/predictions.csv')
+df = pd.read_csv('./data/predictions.csv')
 
 def generate_table(dataframe, max_rows=10):
     return html.Table(

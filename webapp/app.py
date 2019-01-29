@@ -57,6 +57,24 @@ app.layout = html.Div([
                             id = 'max_price_input',
                             placeholder = 'Max. Price',
                             type = 'text' 
+                            ),
+
+                        dcc.Input(
+                            id = 'down_payment_input',
+                            placeholder = 'Down Payment',
+                            type = 'text' 
+                            ),
+
+                        dcc.Input(
+                            id = 'loan_rate_input',
+                            placeholder = 'Loan Rate',
+                            type = 'text' 
+                            ),
+
+                        dcc.Input(
+                            id = 'loan_term_input',
+                            placeholder = 'Loan Term (Years)',
+                            type = 'text' 
                             )
 
                         ], className="four columns"),
@@ -68,7 +86,7 @@ app.css.append_css({
     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 })
 
-def calculate_monthly_payment(loan_amount, rate, years):
+def calculate_monthly_payment(loan_amount, rate = 0.05, years = 30):
     months = years * 12 
     c = rate / 12.0
     return loan_amount * ( c * (1 + c)**months ) / ( (1 + c)**months - 1 )
@@ -77,15 +95,26 @@ def calculate_monthly_payment(loan_amount, rate, years):
     dash.dependencies.Output('graph', 'figure'), 
     [
      dash.dependencies.Input('min_price_input', 'value'),
-     dash.dependencies.Input('max_price_input', 'value')
+     dash.dependencies.Input('max_price_input', 'value'),
+     dash.dependencies.Input('down_payment_input', 'value'),
+     dash.dependencies.Input('loan_rate_input', 'value'),
+     dash.dependencies.Input('loan_term_input', 'value')
      ]
 )
-def update_map(min_price, max_price):
+def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
+
+    # There is probably a better way to 
+    # typecast these by using an input 
+    # option or flag that automatically 
+    # creates these as the correct type.
+    down_payment = int(down_payment)
+    loan_rate = float(loan_rate)
+    loan_term = int(loan_term)
     
     dataset = df[df['PRICE'] > int(min_price)]
     dataset = dataset[dataset['PRICE'] < int(max_price)]
 
-    dataset['monthly_payment'] = dataset['PRICE'].apply(lambda x: calculate_monthly_payment(x, 0.05, 30))
+    dataset['monthly_payment'] = dataset['PRICE'].apply(lambda x: calculate_monthly_payment(x - down_payment, loan_rate, loan_term))
 
     occupancy = 0.7
     dataset['profit'] = occupancy * dataset['airbnb_price'] * (365.25 / 12.0) - dataset['monthly_payment'] 
