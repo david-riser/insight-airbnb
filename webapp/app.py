@@ -10,6 +10,7 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 
 app = dash.Dash(__name__)
+server = app.server 
 
 # Prediction
 df = pd.read_csv('./data/predictions/predictions.csv')
