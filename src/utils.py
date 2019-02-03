@@ -7,7 +7,7 @@ import tqdm
 from geopy.geocoders import Nominatim
 from geopy import distance
 
-def clean_airbnb_dataset(data):
+def clean_airbnb_dataset(data, config):
     '''
 
     This function accepts the airbnb dataframe
@@ -31,17 +31,23 @@ def clean_airbnb_dataset(data):
     data['price'] = data['price'].replace( '[\$,)]','', regex=True).astype(float)
 
     # Apply some filtering options 
+    print('Cleaning AirBnB data...')
+    print(len(data))
     data = data[data['room_type'] == 'Entire home/apt']
-    data = data[data['price'] < 800]
-    data = data[data['bedrooms'] < 8]
+    print(len(data))
+    data = data[data['price'] < float(config['max_nightly_price'])]
+    print(len(data))
+    data = data[data['bedrooms'] < int(config['max_bedrooms'])]
+    print(len(data))
 
     # Remove nan 
     data.dropna(how = 'any', inplace = True)
+    print(len(data))
 
     return data 
 
 
-def clean_crimes_dataset(data):
+def clean_crimes_dataset(data, config):
 
     # Standardize names of columns
     cols = list(data.columns)
@@ -61,12 +67,15 @@ def clean_crimes_dataset(data):
     crime_codes = [3115, 1402, 3831, 802, 3301, 2647]
     data['is_considered_in_model'] = data['OFFENSE_CODE'].apply(lambda x: x in crime_codes)
     data_subset = data[data['is_considered_in_model'] == True]
-    data_subset = data_subset[data_subset['latitude'] > 39]
-    data_subset = data_subset[data_subset['longitude'] < 20]
+    print(len(data_subset))
+    data_subset = data_subset[data_subset['latitude'] > float(config['min_latitude'])]
+    print(len(data_subset))
+    data_subset = data_subset[data_subset['longitude'] < float(config['max_longitude'])]
+    print(len(data_subset))
 
     return data_subset
 
-def clean_redfin_dataset(data):
+def clean_redfin_dataset(data, config):
 
     # Standardize names of columns
     cols = list(data.columns)
@@ -81,11 +90,17 @@ def clean_redfin_dataset(data):
             new_cols.append('bedrooms')
         elif col == 'BATHS':
             new_cols.append('bathrooms')
+        elif col == 'PRICE':
+            new_cols.append('price')
         else:
             new_cols.append(col)
 
     data.columns = new_cols
-
+    
+    print('Cleaning redfin data...')
+    print(len(data))
+    data = data[data['bedrooms'] < int(config['max_bedrooms'])]
+    print(len(data))
     return data
 
 def add_crime_index(data, kde):

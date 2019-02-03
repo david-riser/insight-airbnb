@@ -10,6 +10,7 @@ from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_squared_error
 from sklearn.neighbors import KNeighborsRegressor 
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 
@@ -47,6 +48,9 @@ def train_kfold(x, y, k = 5, model_name = 'unnamed', builder = RandomForestRegre
 
         fold_index += 1
 
+        if model_name == 'elastic_net':
+            print('[{}] '.format(model_name), model.coef_)
+
     return oof_predictions 
 
 if __name__ == '__main__':
@@ -65,6 +69,10 @@ if __name__ == '__main__':
 
     x = airbnb_data[features].values
     y = airbnb_data['price'].values
+
+    # Scale 
+    ss = StandardScaler() 
+    x = ss.fit_transform(x)
 
     rf_params = {
         'n_jobs' : -1,
@@ -132,6 +140,7 @@ if __name__ == '__main__':
     features.remove('longitude')
     x = airbnb_data[features].values
 
+    print('Moving to elastic_net w/ features: ', features)
     oof_preds = train_kfold(
         x = x,
         y = y,

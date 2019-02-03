@@ -8,89 +8,35 @@ import numpy as np
 import pandas as pd
 import plotly.plotly as py
 import plotly.graph_objs as go
+import utils 
+
+# from layout import build_layout 
+from tabbedlayout import build_layout
 
 app = dash.Dash(__name__)
+
+# Although this is not used in the 
+# code, it seems to be important for the 
+# Heroku app to work.  This is the Flask
+# server that underlies the dash app. 
 server = app.server 
 
-# Prediction
+# Load data and apply transformation to have required 
+# columns for this website. 
 df = pd.read_csv('./data/predictions/predictions.csv')
+utils.add_profit_to_dataframe(
+    dataset = df, 
+    down_payment = 0, 
+    loan_rate = 0.01, 
+    loan_term = 30
+    )
 
-app.layout = html.Div([
-        html.Div([
-                html.Div([
-                        html.H3('Airvestments: Find your next investment property!'),
-                        
-                        dcc.Graph(
-                            id = 'graph',
-                            figure = {
-                                'data': [{'lat': df['latitude'], 'lon': df['longitude'], 'type': 'scattermapbox', 'text': df['airbnb_price']}],
-                                'layout': {
-                                    'mapbox': {
-                                        'accesstoken': (
-                                            'pk.eyJ1IjoiZG1yaXNlciIsImEiOiJjanJmN3E4eW4yN283NDNwZDV6cWowMXNqIn0.oHNXyMiqEAgbyIrmprW2yA'
-                                            ),
-                                        'center' : {
-                                            'lat' : 42.3536, 
-                                            'lon' : -71.0638 
-                                            },
-                                        'zoom' : 9.6,
-                                        'style' : 'dark'
-                                        },
-                                    'margin': {
-                                        'l': 0, 'r': 0, 'b': 0, 't': 0
-                                        },
-                                    }
-                                }
-                            )
-                        
-                        ], className = "eight columns"),
-                
-                html.Div([
-                        html.H3('Enter Settings!'),
-
-                        dcc.Input(
-                            id = 'min_price_input',
-                            placeholder = 'Min. Price',
-                            type = 'text'
-                            ),
-
-                        dcc.Input(
-                            id = 'max_price_input',
-                            placeholder = 'Max. Price',
-                            type = 'text' 
-                            ),
-
-                        dcc.Input(
-                            id = 'down_payment_input',
-                            placeholder = 'Down Payment',
-                            type = 'text' 
-                            ),
-
-                        dcc.Input(
-                            id = 'loan_rate_input',
-                            placeholder = 'Loan Rate',
-                            type = 'text' 
-                            ),
-
-                        dcc.Input(
-                            id = 'loan_term_input',
-                            placeholder = 'Loan Term (Years)',
-                            type = 'text' 
-                            )
-
-                        ], className="four columns"),
-                ], className="row"),
-
-        ])
+# Setup the document layout 
+app.layout = build_layout(df) 
 
 app.css.append_css({
     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 })
-
-def calculate_monthly_payment(loan_amount, rate = 0.05, years = 30):
-    months = years * 12 
-    c = rate / 12.0
-    return loan_amount * ( c * (1 + c)**months ) / ( (1 + c)**months - 1 )
     
 @app.callback(
     dash.dependencies.Output('graph', 'figure'), 
@@ -102,6 +48,7 @@ def calculate_monthly_payment(loan_amount, rate = 0.05, years = 30):
      dash.dependencies.Input('loan_term_input', 'value')
      ]
 )
+
 def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
 
     # There is probably a better way to 
@@ -115,10 +62,8 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
     dataset = df[df['PRICE'] > int(min_price)]
     dataset = dataset[dataset['PRICE'] < int(max_price)]
 
-    dataset['monthly_payment'] = dataset['PRICE'].apply(lambda x: calculate_monthly_payment(x - down_payment, loan_rate, loan_term))
-
-    occupancy = 0.7
-    dataset['profit'] = occupancy * dataset['airbnb_price'] * (365.25 / 12.0) - dataset['monthly_payment'] 
+    # This should run first too idk how. 
+    utils.add_profit_to_dataframe(dataset, down_payment, loan_rate, loan_term)
 
     return {
 
@@ -127,7 +72,11 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
                 'lat': dataset['latitude'], 
                 'lon': dataset['longitude'], 
                 'type': 'scattermapbox', 
-                'text': dataset['profit']
+                'text': dataset['profit'],
+                'marker' : {
+                    'line' : {'width' : 1},
+                    'color' : dataset['profit']
+                    }
                 }
             ],
 
@@ -141,7 +90,7 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
                     'lon' : -71.0638 
                     },
                 'zoom' : 9.6,
-                'style' : 'dark'
+                'style' : 'light'
                 },
             'margin': {
                 'l': 0, 'r': 0, 'b': 0, 't': 0
@@ -150,5 +99,8 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
         }
 
 if __name__ == '__main__':
-    app.run_server(debug = True, port = 5678)
+    app.run_server(
+        debug = True, 
+        port = 5678
+        )
     
