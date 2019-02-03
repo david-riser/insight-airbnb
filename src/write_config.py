@@ -5,8 +5,9 @@ import json
 if __name__ == '__main__':
 
     config = {
+        'min_nightly_price' : 20,
         'max_nightly_price' : 800, 
-        'max_bedrooms' : 6,
+        'max_bedrooms' : 5,
         'min_latitude' : 35,
         'max_latitude' : 45,
         'min_longitude' : -72,

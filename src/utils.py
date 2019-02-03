@@ -3,6 +3,9 @@
 import numpy as np 
 import pandas as pd
 import tqdm
+import warnings
+warnings.filterwarnings('ignore')
+
 
 from geopy.geocoders import Nominatim
 from geopy import distance
@@ -32,17 +35,12 @@ def clean_airbnb_dataset(data, config):
 
     # Apply some filtering options 
     print('Cleaning AirBnB data...')
-    print(len(data))
     data = data[data['room_type'] == 'Entire home/apt']
-    print(len(data))
     data = data[data['price'] < float(config['max_nightly_price'])]
-    print(len(data))
     data = data[data['bedrooms'] < int(config['max_bedrooms'])]
-    print(len(data))
 
     # Remove nan 
     data.dropna(how = 'any', inplace = True)
-    print(len(data))
 
     return data 
 
@@ -64,16 +62,17 @@ def clean_crimes_dataset(data, config):
     data.columns = new_cols
 
     # Do cleaning
-    crime_codes = [3115, 1402, 3831, 802, 3301, 2647]
-    data['is_considered_in_model'] = data['OFFENSE_CODE'].apply(lambda x: x in crime_codes)
-    data_subset = data[data['is_considered_in_model'] == True]
-    print(len(data_subset))
-    data_subset = data_subset[data_subset['latitude'] > float(config['min_latitude'])]
-    print(len(data_subset))
-    data_subset = data_subset[data_subset['longitude'] < float(config['max_longitude'])]
-    print(len(data_subset))
+    important_crimes = ['Investigate Person', 'Drug Violation', 'Simple Assault', 
+                        'Aggravated Assault']
 
-    return data_subset
+    data['is_important_crime'] = data['OFFENSE_CODE_GROUP'].apply(lambda x: x in important_crimes)
+    data = data[data['is_important_crime'] > 0]
+    data = data[data['latitude'] > float(config['min_latitude'])]
+    data = data[data['longitude'] < float(config['max_longitude'])]
+    data = data[['OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'latitude', 'longitude']]
+    data.dropna(how = 'any', inplace = True)
+
+    return data
 
 def clean_redfin_dataset(data, config):
 
@@ -98,9 +97,7 @@ def clean_redfin_dataset(data, config):
     data.columns = new_cols
     
     print('Cleaning redfin data...')
-    print(len(data))
     data = data[data['bedrooms'] < int(config['max_bedrooms'])]
-    print(len(data))
     return data
 
 def add_crime_index(data, kde):
@@ -126,4 +123,19 @@ def add_attraction_distances(data, attractions):
             data['dist_{}'.format(index)][row_index] = distance.distance(attr, (row['latitude'], row['longitude'])).miles
 
 
+def add_closest_t_stop(data, kdtree):
+    ''' Add metro stops distance from kdtree '''
 
+    data['dist_mbta_1'] = np.zeros(len(data))
+    data['dist_mbta_2'] = np.zeros(len(data))
+    data['dist_mbta_3'] = np.zeros(len(data))
+
+    for row_index, row in tqdm.tqdm(data.iterrows(), total = len(data)):
+        dist, ind = kdtree.query(
+            np.array([row['latitude'], row['longitude']]).reshape(1, -1), k = 3
+            )
+
+        data['dist_mbta_1'][row_index] = dist[0][0]
+        data['dist_mbta_2'][row_index] = dist[0][1]
+        data['dist_mbta_3'][row_index] = dist[0][2]
+    
