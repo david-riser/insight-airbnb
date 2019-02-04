@@ -60,7 +60,7 @@ if __name__ == '__main__':
     redfin_data = pd.read_csv('./data/processed/redfin_boston.csv')
 
     # Get training and testing
-    features = ['bedrooms', 'bathrooms', 'latitude', 'longitude', 'crime_index']
+    features = ['bedrooms', 'bathrooms', 'latitude', 'longitude', 'crime_index', 'cluster_index']
 
     # Add distance features
     for col in airbnb_data.columns:
