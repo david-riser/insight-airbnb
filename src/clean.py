@@ -8,7 +8,7 @@ from sklearn.neighbors import KernelDensity
 from sklearn.neighbors import KDTree
 from sklearn.cluster import KMeans
 
-def create_clusters(airbnb_data, redfin_data, k = 4):
+def create_clusters(airbnb_data, redfin_data, k = 8):
     kmeans = KMeans(k)
     airbnb_data['cluster_index'] = kmeans.fit_predict(airbnb_data[['latitude', 'longitude']].values)
     redfin_data['cluster_index'] = kmeans.predict(redfin_data[['latitude', 'longitude']].values)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         crimes_data = utils.clean_crimes_dataset(crimes_data, config)
         
         # Build crime KDE
-        kde = create_crime_kde(crimes_data, 0.1)
+        kde = create_crime_kde(crimes_data, 0.002)
 
         # Build KDTree that contains subway stations 
         kdtree = load_t_stations_to_kdtree()
@@ -87,7 +87,6 @@ if __name__ == '__main__':
         # Add closest MBTA stop 
         utils.add_closest_t_stop(airbnb_data, kdtree)
         utils.add_closest_t_stop(redfin_data, kdtree)
-
 
         # Save cleaned data
         airbnb_data.to_csv('./data/processed/airbnb.csv', index = False)

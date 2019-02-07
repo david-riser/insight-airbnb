@@ -36,6 +36,7 @@ def clean_airbnb_dataset(data, config):
     # Apply some filtering options 
     print('Cleaning AirBnB data...')
     data = data[data['room_type'] == 'Entire home/apt']
+    data = data[data['price'] > float(config['min_nightly_price'])]
     data = data[data['price'] < float(config['max_nightly_price'])]
     data = data[data['bedrooms'] < int(config['max_bedrooms'])]
 
@@ -130,6 +131,10 @@ def add_closest_t_stop(data, kdtree):
     data['dist_mbta_2'] = np.zeros(len(data))
     data['dist_mbta_3'] = np.zeros(len(data))
 
+    data['mbta_1'] = np.zeros(len(data))
+    data['mbta_2'] = np.zeros(len(data))
+    data['mbta_3'] = np.zeros(len(data))
+
     for row_index, row in tqdm.tqdm(data.iterrows(), total = len(data)):
         dist, ind = kdtree.query(
             np.array([row['latitude'], row['longitude']]).reshape(1, -1), k = 3
@@ -138,4 +143,7 @@ def add_closest_t_stop(data, kdtree):
         data['dist_mbta_1'][row_index] = dist[0][0]
         data['dist_mbta_2'][row_index] = dist[0][1]
         data['dist_mbta_3'][row_index] = dist[0][2]
-    
+        data['mbta_1'][row_index] = ind[0][0]
+        data['mbta_2'][row_index] = ind[0][1]
+        data['mbta_3'][row_index] = ind[0][2]
+        
