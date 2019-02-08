@@ -11,9 +11,11 @@ from sklearn.cluster import KMeans
 def create_clusters(airbnb_data, redfin_data, k = 8):
     kmeans = KMeans(k)
     airbnb_data['cluster_index'] = kmeans.fit_predict(airbnb_data[['latitude', 'longitude']].values)
-    redfin_data['cluster_index'] = kmeans.predict(redfin_data[['latitude', 'longitude']].values)
 
-def create_crime_kde(data, bandwidth = 0.002):
+    if redfin_data is not None:
+        redfin_data['cluster_index'] = kmeans.predict(redfin_data[['latitude', 'longitude']].values)
+
+def create_crime_kde(data, bandwidth = 0.002, kernel_type = 'exponential'):
 
     ''' Load and clean crime dataset 
     and return a Scikit Learn KernelDensity 
@@ -21,7 +23,7 @@ def create_crime_kde(data, bandwidth = 0.002):
 
     # setup kde 
     kde = KernelDensity(
-        kernel = 'exponential',
+        kernel = kernel_type,
         bandwidth = bandwidth
         )
 
