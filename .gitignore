@@ -2,8 +2,8 @@
 
 # Editor files 
 *~ 
-.idea
-.pymc_1.trace
+.idea/
+.pymc_1.trace/
 
 # Images
 *.pdf 
