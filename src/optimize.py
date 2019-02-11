@@ -12,6 +12,7 @@ creation.
 
 '''
 
+import matplotlib.pyplot as plt 
 import numpy as np 
 import pandas as pd 
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
         'kernel_type' : ['exponential', 'gaussian', 'tophat']
         }
 
-    number_random_trials = 1000
+    number_random_trials = 400
 
     # Load data and important things 
     dataset = pd.read_csv('./data/processed/airbnb.csv')
@@ -172,3 +173,45 @@ if __name__ == '__main__':
 
     joblib.dump(model, './models/random_forest_optimized.pkl')
 
+    # Plot the feature importances 
+    # for my backup slides 
+    feat_names = {
+        'dist_0' : 'Dist. Back Bay T Station',
+        'dist_1' : 'Dist. Harvard Square T Station',
+        'dist_2' : 'Dist. Museum of Science',
+        'dist_3' : 'Dist. Faneuil Hall',
+        'dist_4' : 'Dist. Copley Square',
+        'dist_5' : 'Dist. Museum of Fine Art',
+        'dist_6' : 'Dist. Freedom Trail (start)',
+        'dist_7' : 'Dist. Sam Adams',
+        'dist_8' : 'Dist. Toyota of Braintree',
+        'crime_index' : 'Crime Index',
+        'dist_mbta_1' : 'Dist. Closest T Station',
+        'dist_mbta_2' : 'Dist. 2nd Closest T Station',
+        'dist_mbta_3' : 'Dist. 3rd Closest T Station',
+        'mbta_1' : 'Closest T Station Code',
+        'mbta_2' : '2nd Closest T Station Code',
+        'mbta_3' : '3rd Closest T Station Code',
+        'cluster_index' : 'Neighborhood Cluster'
+    }
+
+    plotted_features = []
+    for feature in features:
+        if feature in feat_names.keys():
+            plotted_features.append(feat_names[feature])
+        else:
+            plotted_features.append(feature)
+
+    # Sort by size decreasing 
+    indices = np.argsort(model.feature_importances_)
+
+    plt.rc('font', size = 18)
+    plt.rc('font', family = 'serif')
+    plt.figure(figsize = (9, 16))
+    plt.barh(
+        [plotted_features[idx] for idx in indices], 
+        [model.feature_importances_[idx] for idx in indices],
+        edgecolor = 'k'
+        )
+    plt.xlabel('Feature Importance')
+    plt.savefig('./image/optimized_feature_importances.png', bbox_inches = 'tight')
