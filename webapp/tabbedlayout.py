@@ -4,7 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html 
 import dash_table
 
-TABLE_COLS = ['bedrooms', 'bathrooms', 'URL', 'profit']
+from services import services
 
 def build_layout(df):
 
@@ -99,10 +99,11 @@ def build_layout(df):
                     label = 'Property List',
                     children = [
                         html.Div([
+                                dcc.Interval(id='table-update',interval = 1000), 
                                 dash_table.DataTable(
                                     id = 'table', 
-                                    columns = [{'name':col, 'id':col} for col in TABLE_COLS],
-                                    data = df[TABLE_COLS].to_dict('rows')
+                                    columns = [{'name':col, 'id':col} for col in services['table_cols']],
+                                    data = services['data'][services['table_cols']].to_dict('records')
                                     )
                                 ])
                         ]

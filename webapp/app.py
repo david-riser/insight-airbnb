@@ -10,7 +10,7 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 import utils 
 
-# from layout import build_layout 
+from services import services 
 from tabbedlayout import build_layout
 
 app = dash.Dash(__name__)
@@ -31,6 +31,8 @@ utils.add_profit_to_dataframe(
     loan_term = 30
     )
 
+services['data'] = df
+
 # Setup the document layout 
 app.layout = build_layout(df) 
 
@@ -48,7 +50,6 @@ app.css.append_css({
      dash.dependencies.Input('loan_term_input', 'value')
      ]
 )
-
 def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
 
     # There is probably a better way to 
@@ -59,8 +60,10 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
     loan_rate = float(loan_rate)
     loan_term = int(loan_term)
     
-    dataset = df[df['PRICE'] > int(min_price)]
-    dataset = dataset[dataset['PRICE'] < int(max_price)]
+    dataset = df[df['price'] > int(min_price)]
+    dataset = dataset[dataset['price'] < int(max_price)]
+
+    services['data_subset'] = dataset
 
     # This should run first too idk how. 
     utils.add_profit_to_dataframe(dataset, down_payment, loan_rate, loan_term)
@@ -98,9 +101,15 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
             }
         }
 
+@app.callback(
+    dash.dependencies.Output('table', 'data'),
+    [
+     dash.dependencies.Input('table-update', 'n_intervals'),
+     ]
+)
+def update_table(min_price, max_price, down_payment, loan_rate, loan_term):
+    return services['dataset'][services['table_cols']].to_dict('records')
+
 if __name__ == '__main__':
-    app.run_server(
-        debug = True, 
-        port = 5678
-        )
+    app.run_server(debug = True, port = 5678)
     
