@@ -245,9 +245,10 @@ if __name__ == '__main__':
     
     test_score = np.median(np.abs(np.exp(y_pred) - np.exp(y_test)))
     train_score = np.median(np.abs(np.exp(y_train_pred) - np.exp(y_train)))
-    
-    opt_param_results.to_csv('./data/metrics/optimize.csv', index = False)
 
+    # Save things for later. 
+    opt_param_results.to_csv('./data/metrics/optimize.csv', index = False)
     joblib.dump(model, './models/random_forest_optimized.pkl')
 
+    # Create the final feature importance plot.
     plot_feature_importance(model, features, './image')

@@ -103,7 +103,7 @@ def build_layout(df):
                                 dash_table.DataTable(
                                     id = 'table', 
                                     columns = [{'name':col, 'id':col} for col in services['table_cols']],
-                                    data = services['data'][services['table_cols']].to_dict('records')
+                                    data = services['data_subset'][services['table_cols']].to_dict('records')
                                     )
                                 ])
                         ]

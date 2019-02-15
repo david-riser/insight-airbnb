@@ -32,6 +32,7 @@ utils.add_profit_to_dataframe(
     )
 
 services['data'] = df
+services['data_subset'] = df
 
 # Setup the document layout 
 app.layout = build_layout(df) 
@@ -63,10 +64,11 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
     dataset = df[df['price'] > int(min_price)]
     dataset = dataset[dataset['price'] < int(max_price)]
 
-    services['data_subset'] = dataset
-
     # This should run first too idk how. 
     utils.add_profit_to_dataframe(dataset, down_payment, loan_rate, loan_term)
+
+    # Add to my global data storage area. 
+    services['data_subset'] = dataset
 
     return {
 
@@ -107,8 +109,8 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
      dash.dependencies.Input('table-update', 'n_intervals'),
      ]
 )
-def update_table(min_price, max_price, down_payment, loan_rate, loan_term):
-    return services['dataset'][services['table_cols']].to_dict('records')
+def update_table(n_intervals):
+    return services['data_subset'][services['table_cols']].to_dict('records')
 
 if __name__ == '__main__':
     app.run_server(debug = True, port = 5678)

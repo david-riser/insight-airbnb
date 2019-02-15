@@ -3,30 +3,34 @@
 import pandas as pd 
 import yaml 
 
-if __name__ == '__main__':
-
-    input_file = './data/raw/mbta.yaml'
-
+def create_data_structure():
     data_dict = {}
     data_dict['station'] = []
     data_dict['latitude'] = []
     data_dict['longitude'] = []
+    return data_dict
+
+def fill_data_structure(data_dict, station):
+    data_dict['station'].append(station['title'])
+    data_dict['latitude'].append(station['latitude'])
+    data_dict['longitude'].append(station['longitude'])
+
+if __name__ == '__main__':
+
+    input_file = './data/raw/mbta.yaml'
+
+    data_dict = create_data_structure()
 
     with open(input_file, 'r') as stream:
         yaml_data = yaml.load(stream)
 
         for list_item in yaml_data:
-            print('-' * 40)
-            print(list_item['title'])
-
             for station in list_item['stations']:
                 if 'title' in station.keys():
-                    data_dict['station'].append(station['title'])
-                    data_dict['latitude'].append(station['latitude'])
-                    data_dict['longitude'].append(station['longitude'])
-
-
+                    fill_data_structure(data_dict, station)
     
     # Spit out the info 
-    data = pd.DataFrame(data_dict)
-    data.to_csv('./data/processed/mbta_stations.csv', index = False)
+    pd.DataFrame(data_dict).to_csv(
+        './data/processed/mbta_stations.csv', 
+        index = False
+        )

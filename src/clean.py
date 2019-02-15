@@ -16,10 +16,11 @@ def create_clusters(airbnb_data, redfin_data, k = 8):
         redfin_data['cluster_index'] = kmeans.predict(redfin_data[['latitude', 'longitude']].values)
 
 def create_crime_kde(data, bandwidth = 0.002, kernel_type = 'exponential'):
-
-    ''' Load and clean crime dataset 
-    and return a Scikit Learn KernelDensity 
-    estimation object. '''
+    ''' 
+    Return a Scikit Learn KernelDensity 
+    estimation object with the requested settings
+    and loaded with the provided dataset.
+    '''
 
     # setup kde 
     kde = KernelDensity(
