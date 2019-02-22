@@ -6,7 +6,7 @@ import dash_table
 
 from services import services
 
-def build_layout():
+def build_layout(df):
 
     tabbed_layout = html.Div([
 
@@ -77,7 +77,7 @@ def build_layout():
                             dcc.Graph(
                                 id = 'graph',
                                 figure = {
-                                    'data': [{'lat': services['data_subset']['latitude'], 'lon': services['data_subset']['longitude'], 'type': 'scattermapbox', 'text': services['data_subset']['profit']}],
+                                    'data': [{'lat': df['latitude'], 'lon': df['longitude'], 'type': 'scattermapbox', 'text': df['profit']}],
                                     'layout': {
                                         'mapbox': {
                                             'accesstoken': (

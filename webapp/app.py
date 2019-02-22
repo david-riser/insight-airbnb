@@ -35,7 +35,7 @@ services['data'] = df
 services['data_subset'] = df
 
 # Setup the document layout 
-app.layout = build_layout(df) 
+app.layout = build_layout() 
 
 app.css.append_css({
     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
@@ -51,7 +51,12 @@ app.css.append_css({
      dash.dependencies.Input('loan_term_input', 'value')
      ]
 )
-def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
+def update_map(
+    min_price = 0, 
+    max_price = 1000000000, 
+    down_payment = 0, 
+    loan_rate = 0.03, 
+    loan_term = 30):
 
     # There is probably a better way to 
     # typecast these by using an input 
@@ -61,9 +66,9 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
     loan_rate = float(loan_rate)
     loan_term = int(loan_term)
     
-    dataset = df[df['price'] > int(min_price)]
+    dataset = services['data'][services['data']['price'] > int(min_price)]
     dataset = dataset[dataset['price'] < int(max_price)]
-
+    
     # This should run first too idk how. 
     utils.add_profit_to_dataframe(dataset, down_payment, loan_rate, loan_term)
 
@@ -74,13 +79,13 @@ def update_map(min_price, max_price, down_payment, loan_rate, loan_term):
 
         'data': [
             {
-                'lat': dataset['latitude'], 
-                'lon': dataset['longitude'], 
+                'lat': services['data_subset']['latitude'], 
+                'lon': services['data_subset']['longitude'], 
                 'type': 'scattermapbox', 
-                'text': dataset['profit'],
+                'text': services['data_subset']['profit'],
                 'marker' : {
                     'line' : {'width' : 1},
-                    'color' : dataset['profit']
+                    'color' : services['data_subset']['profit']
                     }
                 }
             ],

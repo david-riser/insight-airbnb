@@ -87,6 +87,11 @@ def build_layout(df):
                         )
                     ], className = 'row')
 
+
+            html.Div([
+                    html.A('Demo Slides', href = 'www.google.com')
+                ])
+
         ])
     
     return layout 
