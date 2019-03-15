@@ -8,7 +8,8 @@ Date:   Feb. 8, 2019
 
 This file is used to optimize the parameters of 
 my model, including those related to feature 
-creation.
+creation.  Finally, the best model parameters 
+are used to train the model. 
 
 '''
 
@@ -24,6 +25,19 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm 
 
 def build_feature_list(dataset):
+    ''' Build a python list of all features used as predictors.
+    A function is used to automate the retrieval of all 'dist'
+    named variables.
+
+    Arguments:
+    ----------
+    dataset: A pandas.DataFrame containing the housing information
+
+    Returns:
+    --------
+    features: A list of strings (feature names that are columns of dataset)
+
+    '''
 
     # Get training and testing
     features = ['bedrooms', 'bathrooms', 'latitude', 
@@ -40,12 +54,18 @@ def build_feature_list(dataset):
 def plot_feature_importance(model, features, image_path):
     ''' Save a plot of feature importance. 
     
-    Inputs: 
-    model      -> input sklearn tree based model
-    features   -> list of features used in training
-    image_path -> the save directory 
+    Arguments:
+    ----------
+    model: input sklearn tree based model
+    features: list of features used in training
+    image_path: the save directory
 
-    ''' 
+    Returns:
+    --------
+    None, the plot is saved at the end
+    of the function.
+
+    '''
 
     feat_names = {
         'dist_0' : 'Dist. Back Bay T Station',
@@ -89,12 +109,40 @@ def plot_feature_importance(model, features, image_path):
     plt.savefig('{}/optimized_feature_importances.png'.format(image_path), bbox_inches = 'tight')
     
 def load_dataset(data_dir):
+    ''' Load the airbnb dataset.
+
+    Arguements: 
+    ----------- 
+    data_dir: String containing the directory name 
+
+    Returns: 
+    dataset: A pandas.DataFrame that contains the 
+    full dataset and a new column called log_price. 
+    
+    '''
+
     dataset = pd.read_csv('{}/airbnb.csv'.format(data_dir))
     dataset['log_price'] = np.log(dataset['price'].values)
     return dataset
 
 def train_kfold(x, y, k = 5, builder = RandomForestRegressor, params = None):
-    ''' Train and CV a model built by builder. '''
+    ''' Train and CV a model built by builder.
+
+
+    Arguments:
+    ----------
+    x: features of dataset np.array object
+    y: target variable np.array object
+    k: number of folds in the cross-validation
+    builder: builder of sklearn.regressor
+    params: passed to the model constructor, dictionary
+
+    Returns:
+    --------
+    a float containing the mean of the training scores
+    a float containing the mean of the testing scores
+
+    '''
 
     # Setup 5 fold CV
     kf = KFold(n_splits = k)
@@ -111,7 +159,7 @@ def train_kfold(x, y, k = 5, builder = RandomForestRegressor, params = None):
         model.fit(x[train_index], y[train_index])
         y_pred = model.predict(x[valid_index])
 
-        # Metric report
+        # Metric Report 
         y_train_pred = model.predict(x[train_index])
         train_metric[fold_index] = np.median(np.abs(np.exp(y_train_pred) - np.exp(y[train_index])))
         valid_metric[fold_index] = np.median(np.abs(np.exp(y_pred) - np.exp(y[valid_index])))
@@ -120,29 +168,7 @@ def train_kfold(x, y, k = 5, builder = RandomForestRegressor, params = None):
 
     return np.mean(train_metric), np.mean(valid_metric)
 
-if __name__ == '__main__':
-
-    # Setup 
-    parameter_ranges = {
-        'n_neighborhoods' : [3, 12],
-        'kernel_bandwidth' : [0.0001, 0.01],
-        'n_estimators' : [10, 150],
-        'max_depth' : [3, 12]
-        }
-
-    parameter_settings = {
-        'kernel_type' : ['exponential', 'gaussian', 'tophat']
-        }
-
-    # Constants 
-    number_random_trials = 200
-    random_seed = 1234 
-
-    dataset = load_dataset('./data/processed')
-    features = build_feature_list(dataset)
-
-    # Load the scaling transformation 
-    transformer = joblib.load('./models/standard_scaler.pkl')
+def generate_parameters(parameter_ranges, parameter_settings, number_random_trials):
 
     # Generate some parameters 
     n_neighborhoods = np.random.randint(
@@ -170,6 +196,36 @@ if __name__ == '__main__':
         )
 
     kernel_type = np.random.choice(parameter_settings['kernel_type'], number_random_trials)
+
+    return n_neighborhoods, kernel_bandwidth, n_estimators, max_depth, kernel_type 
+
+if __name__ == '__main__':
+
+    # Constants and Setup 
+    number_random_trials = 10
+    random_seed = 1234 
+
+    parameter_ranges = {
+        'n_neighborhoods' : [3, 12],
+        'kernel_bandwidth' : [0.0001, 0.01],
+        'n_estimators' : [10, 150],
+        'max_depth' : [3, 12]
+        }
+
+    parameter_settings = {
+        'kernel_type' : ['exponential', 'gaussian', 'tophat']
+        }
+
+    dataset = load_dataset('./data/processed')
+    features = build_feature_list(dataset)
+
+    # Build transformer 
+    transformer = StandardScaler() 
+    transformer.fit(dataset[features].values)
+
+    n_neighborhoods, kernel_bandwidth, n_estimators, max_depth, kernel_type = generate_paramters(
+        parameter_ranges, parameter_settings, number_random_trials
+        )
 
     # Setup output dict for results
     output_data_dict = {}
@@ -214,8 +270,10 @@ if __name__ == '__main__':
         
     opt_param_results = pd.DataFrame(output_data_dict)
     opt_param_results.sort_values('test_score', inplace = True, ascending = True)
-    
-    # Run Final Model
+
+    # 
+    # From this point we're training the final model 
+    #
         
     # Feature level stuff 
     create_clusters(dataset, redfin_data = None, k = n_neighborhoods[trial_index])
@@ -233,8 +291,10 @@ if __name__ == '__main__':
     
     # This wastes time but it's quite easy compared to getting the 
     # correct columns to update with the information from clusters 
-    # and crime.  This can be done to speed things up later. 
-    x_train, x_test, y_train, y_test = train_test_split(dataset[features], dataset['log_price'], random_state = random_seed)
+    # and crime.  This could be done to speed things up later. 
+    x_train, x_test, y_train, y_test = train_test_split(
+        dataset[features], dataset['log_price'], 
+        random_state = random_seed)
     x_train = transformer.transform(x_train)
     x_test = transformer.transform(x_test)
 

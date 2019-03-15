@@ -16,3 +16,6 @@
 
 # Models 
 *.joblib
+
+# Modules 
+src/__pycache__/
