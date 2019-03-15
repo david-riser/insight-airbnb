@@ -6,16 +6,22 @@ import tqdm
 import warnings
 warnings.filterwarnings('ignore')
 
-
 from geopy.geocoders import Nominatim
 from geopy import distance
 
 def clean_airbnb_dataset(data, config):
-    '''
+    ''' Apply all cleaning operations to the dataset
+    from airbnb.  These operations were discovered in 
+    the data EDA notebooks. 
 
-    This function accepts the airbnb dataframe
-    and returns a cleaned copy that is ready to
-    be split for training and testing. 
+    Arguments: 
+    ----------
+    data: A pandas.DataFrame that contains the full, uncleaned airbnb dataset
+    config: A dictionary that defines numerical bounds for filtering variables
+
+    Returns: 
+    -------- 
+    data: The airbnb dataset cleaned, still a pandas.DataFrame. 
 
     '''
 
@@ -47,7 +53,20 @@ def clean_airbnb_dataset(data, config):
 
 
 def clean_crimes_dataset(data, config):
+    ''' Apply all cleaning operations to the dataset
+    from airbnb.  These operations were discovered in 
+    the data EDA notebooks. 
 
+    Arguments: 
+    ----------
+    data: A pandas.DataFrame that contains the full, uncleaned crimes dataset
+    config: A dictionary that defines numerical bounds for filtering variables
+
+    Returns: 
+    -------- 
+    data: The crimes dataset cleaned, still a pandas.DataFrame. 
+
+    '''
     # Standardize names of columns
     cols = list(data.columns)
     new_cols = []
@@ -76,6 +95,20 @@ def clean_crimes_dataset(data, config):
     return data
 
 def clean_redfin_dataset(data, config):
+    ''' Apply all cleaning operations to the dataset
+    from redfin.  These operations were discovered in 
+    the data EDA notebooks. 
+
+    Arguments: 
+    ----------
+    data: A pandas.DataFrame that contains the full, uncleaned redfin dataset
+    config: A dictionary that defines numerical bounds for filtering variables
+
+    Returns: 
+    -------- 
+    data: The redfin dataset cleaned, still a pandas.DataFrame. 
+
+    '''
 
     # Standardize names of columns
     cols = list(data.columns)
@@ -102,11 +135,42 @@ def clean_redfin_dataset(data, config):
     return data
 
 def add_crime_index(data, kde):
+    ''' Add a column to the dataframe data that describes the 
+    crime index based on the kernel density estimate. 
+
+    Arguements: 
+    data: A pandas.DataFrame that contains the colunms 
+    latitude and longitude. 
+    kde: A sklearn.neighbors.KernelDensity object that already 
+    has the points loaded.  
+
+    Returns: 
+    None, the column is appened in the function. 
+
+    '''
+
     data['crime_index'] = kde.score_samples(
         data[['latitude', 'longitude']].values
     )
 
 def add_attraction_distances(data, attractions):
+    ''' Find the distance on the surface of the earth (not by traversing
+    roads) between each house and each attraction.  This is done using the 
+    geopy module. 
+
+    Arguments: 
+    ----------
+    data: A pandas.DataFrame that contains the columns 
+    latitude and longitude. 
+    attractions: A python list of addresses that will be 
+    used to compute distance.  For each address, a distance 
+    variable named dist_i will be added to the dataframe, here i 
+    refers to the i-th attraction in the list. 
+
+
+    Returns: 
+    None, the columns are added to the dataframe. 
+    ''' 
 
     attraction_locs = []
     for attr in attractions:
@@ -125,7 +189,21 @@ def add_attraction_distances(data, attractions):
 
 
 def add_closest_t_stop(data, kdtree):
-    ''' Add metro stops distance from kdtree '''
+    ''' Add top 3 metro stops distance and code from kdtree.
+
+    Arguments: 
+    ----------
+    data: A pandas.DataFrame which contains columns latitude and longitude for
+    a list of houses. 
+
+    kdtree: A sklearn.neighbors.KDTree object loaded with mbta stations 
+    that will be queried. 
+    
+    Returns: 
+    --------
+    None, the columns are added to the dataframe. 
+
+    '''
 
     data['dist_mbta_1'] = np.zeros(len(data))
     data['dist_mbta_2'] = np.zeros(len(data))

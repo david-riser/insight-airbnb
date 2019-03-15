@@ -9,6 +9,25 @@ from sklearn.neighbors import KDTree
 from sklearn.cluster import KMeans
 
 def create_clusters(airbnb_data, redfin_data, k = 8):
+    ''' Cluster latitude and longitude into k clusters
+    using the kmeans alogirthm implemented by sklearn.
+
+    Arguments: 
+    ----------
+
+    airbnb_data: dataframe containing the columns latitude and 
+    longitude for airbnb properties 
+
+    redfin_data: optional dataframe containing columns latitude
+    and longitude for redfin properties
+
+    k: the number of clusters to create 
+
+    Returns: 
+    --------
+    Nothing, the dataframes are altered. 
+    '''
+
     kmeans = KMeans(k)
     airbnb_data['cluster_index'] = kmeans.fit_predict(airbnb_data[['latitude', 'longitude']].values)
 
@@ -16,11 +35,28 @@ def create_clusters(airbnb_data, redfin_data, k = 8):
         redfin_data['cluster_index'] = kmeans.predict(redfin_data[['latitude', 'longitude']].values)
 
 def create_crime_kde(data, bandwidth = 0.002, kernel_type = 'exponential'):
-    ''' 
-    Return a Scikit Learn KernelDensity 
-    estimation object with the requested settings
-    and loaded with the provided dataset.
+    ''' Create a kernel density estimate of the occurances in the 
+    dataframe (named data) as a function of latitude and longitude 
+    variables.  
+
+    Arguments: 
+    ----------
+    data: the dataframe which contains columns latitude and longitude 
+    bandwidth: kernel bandwidth parameter for the kernel density estimate 
+    kernel_type: the kernel type (gaussian, exponential, ...) used in the 
+    density estimate 
+    
+    Returns: 
+    --------
+    kde: a sklearn.neighbors.KernelDenstiy object that can be used to query
+    the density for a (latitude, longitude) pair. 
+
     '''
+
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError('Data must be a pandas dataframe')
+    elif 'latitude' not in data.columns or 'longitude' not in data.columns:
+        raise KeyError('Dataframe must contain columns latitude and longitude')
 
     # setup kde 
     kde = KernelDensity(
@@ -35,6 +71,17 @@ def create_crime_kde(data, bandwidth = 0.002, kernel_type = 'exponential'):
     return kde 
 
 def build_list_of_attractions():
+    ''' Return a python list of Boston attractions addresses. 
+
+    Arguements: 
+    None 
+
+    Returns: 
+    attractions: A python list of addresses of some things that I think 
+    might be important attractions. 
+
+    '''
+
     attractions = [
         '145 Dartmouth St, Boston, MA 02116',
         '1400 Massachusetts Ave, Cambridge, MA 02138',
@@ -48,8 +95,21 @@ def build_list_of_attractions():
         ]
     return attractions 
 
-def load_t_stations_to_kdtree():
-    data = pd.read_csv('./data/processed/mbta_stations.csv')
+def load_t_stations_to_kdtree(file_path = './data/processed/mbta_stations.csv'):
+    ''' Load and fill a KDTree with the MBTA stations. 
+
+    Arguments: 
+    ---------
+    file_path: path to the MBTA data produced by process_t_stations.py
+    
+
+    Returns: 
+    --------
+    kdtree: A sklearn.neighbors.KDTree object that can be used to query 
+    for the closest mbta stations. 
+
+    '''
+    data = pd.read_csv(file_path)
     kdtree = KDTree(data[['latitude', 'longitude']].values)
     return kdtree
 
